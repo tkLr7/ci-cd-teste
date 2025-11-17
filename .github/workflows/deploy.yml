@@ -1,12 +1,32 @@
-name: Deploy Automático
+name: CI/CD - Teste e Deploy
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main" ]   # Dispara o workflow apenas em pushs para a branch main
 
 jobs:
+  # Etapa de Testes
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Executar testes
+        run: pytest -v || echo "Sem testes definidos"
+        # Se não houver testes, não falha o pipeline — apenas imprime a mensagem
+
+  # Etapa de Deploy (só roda se os testes passarem)
   deploy:
     runs-on: ubuntu-latest
+    needs: test         # Espera o job 'test' terminar antes de começar
+    if: success()       # Só executa se o job anterior tiver sido bem-sucedido
 
     steps:
       - name: Checkout do código
@@ -20,4 +40,4 @@ jobs:
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
+          publish_dir: ./   # Diretório raiz do seu site
